@@ -1,0 +1,6 @@
+{
+  "name": "JHTUBE",
+  "description": "App de streaming con fondo blanco, miniaturas de video, optimizada para bajo consumo y reproducción offline.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

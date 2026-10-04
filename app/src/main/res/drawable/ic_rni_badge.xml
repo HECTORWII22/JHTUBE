@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+
+    <!-- Blue Circular Badge Background -->
+    <path
+        android:fillColor="#1B3F94"
+        android:pathData="M100,10 A90,90 0 1,1 28,155 C38,142 55,135 70,140 C85,145 92,165 90,185 C93,186 97,187 100,187 A90,90 0 0,0 100,10 Z" />
+
+    <!-- Red Play Button Card -->
+    <path
+        android:fillColor="#FF0000"
+        android:pathData="M52,38 L148,38 A24,24 0 0,1 172,62 L172,88 A24,24 0 0,1 148,112 L52,112 A24,24 0 0,1 28,88 L28,62 A24,24 0 0,1 52,38 Z" />
+
+    <!-- White Play Triangle -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M88,57 L126,75 L88,93 Z" />
+
+    <!-- YouTube Text Silhouette / Lettering -->
+    <!-- You Tube stylized lettering -->
+    <group>
+        <!-- Y -->
+        <path
+            android:fillColor="#212121"
+            android:pathData="M38,124 L44,136 L44,147 L48,147 L48,136 L54,124 L49,124 L46,132 L43,124 Z" />
+        <!-- o -->
+        <path
+            android:fillColor="#212121"
+            android:pathData="M56,135 A6,6 0 1,0 68,135 A6,6 0 1,0 56,135 Z M60,135 A2,2 0 1,1 64,135 A2,2 0 1,1 60,135 Z" />
+        <!-- u -->
+        <path
+            android:fillColor="#212121"
+            android:pathData="M71,130 L71,141 A4,4 0 0,0 79,141 L79,130 L75,130 L75,139 A1.5,1.5 0 0,1 75,139 L75,130 Z" />
+        <!-- T -->
+        <path
+            android:fillColor="#212121"
+            android:pathData="M84,124 L94,124 L94,127 L90.5,127 L90.5,147 L87.5,147 L87.5,127 L84,127 Z" />
+        <!-- u -->
+        <path
+            android:fillColor="#212121"
+            android:pathData="M96,130 L96,141 A4,4 0 0,0 104,141 L104,130 L100.5,130 L100.5,139 L99.5,139 L99.5,130 Z" />
+        <!-- b -->
+        <path
+            android:fillColor="#212121"
+            android:pathData="M106,124 L109.5,124 L109.5,131 A5,5 0 0,1 117,136 A5,5 0 0,1 109.5,141 L109.5,147 L106,147 Z M109.5,136 A2,2 0 1,0 113.5,136 A2,2 0 1,0 109.5,136 Z" />
+        <!-- e -->
+        <path
+            android:fillColor="#212121"
+            android:pathData="M119,135 A5,5 0 0,0 129,135 L129,134 L122.5,134 A2.5,2.5 0 0,1 126.5,131.5 A2.5,2.5 0 0,1 129,133 L132,131 A5,5 0 0,0 119,135 Z" />
+    </group>
+
+    <!-- Bottom Left Cutout Arc -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M0,200 L0,150 A60,60 0 0,1 80,200 Z" />
+
+    <!-- "PARA" in bottom left corner -->
+    <!-- P -->
+    <path
+        android:fillColor="#70757A"
+        android:pathData="M22,168 L30,168 A4,4 0 0,1 30,176 L26,176 L26,183 L22,183 Z M26,172 L26,173 L29,173 A1,1 0 0,0 29,172 Z" />
+    <!-- A -->
+    <path
+        android:fillColor="#70757A"
+        android:pathData="M33,183 L37,168 L41,168 L45,183 L41,183 L40,179 L36,179 L35,183 Z M37,176 L39,176 L38,172 Z" />
+    <!-- R -->
+    <path
+        android:fillColor="#70757A"
+        android:pathData="M48,168 L56,168 A4,4 0 0,1 56,176 L52,176 L56,183 L51.5,183 L48,176 L48,183 L48,168 Z M51.5,171 L51.5,173 L54,173 A1,1 0 0,0 54,171 Z" />
+    <!-- A -->
+    <path
+        android:fillColor="#70757A"
+        android:pathData="M58,183 L62,168 L66,168 L70,183 L66,183 L65,179 L61,179 L60,183 Z M62,176 L64,176 L63,172 Z" />
+
+</vector>

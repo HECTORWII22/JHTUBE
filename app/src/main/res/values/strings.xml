@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">JHTUBE</string>
+    <string name="tab_explore">Explorar</string>
+    <string name="tab_library">Biblioteca</string>
+    <string name="tab_history">Historial</string>
+    <string name="tab_ai">Asistente IA</string>
+    <string name="search_hint">Buscar videos, música, transmisiones…</string>
+    <string name="low_data_mode">Modo Ahorro Extremo (2G/3G)</string>
+    <string name="audio_only_mode">Solo Audio (Bajo Consumo)</string>
+    <string name="compress_video">Comprimir Video</string>
+</resources>
