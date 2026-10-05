@@ -27,16 +27,13 @@ class MediaRepository(private val context: Context) {
 
         val RELIABLE_VIDEO_MIRRORS = listOf(
             "https://vjs.zencdn.net/v/oceans.mp4",
-            "https://media.w3.org/2010/05/sintel/trailer.mp4",
-            "https://media.w3.org/2010/05/bunny/trailer.mp4",
             "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
             "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/friday.mp4",
-            "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_2MB.mp4",
-            "https://test-videos.co.uk/vids/jellyfish/mp4/h264/720/Jellyfish_720_10s_2MB.mp4",
-            "https://test-videos.co.uk/vids/sintel/mp4/h264/720/Sintel_720_10s_2MB.mp4",
-            "https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/360/Big_Buck_Bunny_360_10s_1MB.mp4",
-            "https://test-videos.co.uk/vids/jellyfish/mp4/h264/360/Jellyfish_360_10s_1MB.mp4",
-            "https://test-videos.co.uk/vids/sintel/mp4/h264/360/Sintel_360_10s_1MB.mp4"
+            "https://filesamples.com/samples/video/mp4/sample_960x400_ocean_with_audio.mp4",
+            "https://filesamples.com/samples/video/mp4/sample_640x360.mp4",
+            "https://filesamples.com/samples/video/mp4/sample_1280x720_surfing_with_audio.mp4",
+            "https://www.w3schools.com/html/mov_bbb.mp4",
+            "https://www.w3schools.com/html/movie.mp4"
         )
 
         val RELIABLE_AUDIO_MIRRORS = listOf(
@@ -115,18 +112,31 @@ class MediaRepository(private val context: Context) {
         )
     )
 
+    // In-memory & Persistent Snapshot of previously loaded video versions
+    private var lastSuccessfulFeedSnapshot: List<MediaItem> = emptyList()
+
     suspend fun getTrendingMedia(): List<MediaItem> = withContext(Dispatchers.IO) {
         try {
             val remoteItems = serv1Api.getTrending()
             if (remoteItems.isNotEmpty()) {
-                remoteItems.mapIndexed { index, item -> mapServ1ToMediaItem(item, index) }
+                val mapped = remoteItems.mapIndexed { index, item -> mapServ1ToMediaItem(item, index) }
+                lastSuccessfulFeedSnapshot = mapped
+                mapped
             } else {
-                sampleBackupCatalog
+                if (lastSuccessfulFeedSnapshot.isNotEmpty()) lastSuccessfulFeedSnapshot else sampleBackupCatalog
             }
         } catch (e: Exception) {
-            Log.w(TAG, "serv1 trending failed, using fallback: ${e.message}")
-            sampleBackupCatalog
+            Log.w(TAG, "serv1 trending failed, using previous saved version: ${e.message}")
+            if (lastSuccessfulFeedSnapshot.isNotEmpty()) lastSuccessfulFeedSnapshot else sampleBackupCatalog
         }
+    }
+
+    fun getPreviousSavedVersion(): List<MediaItem> {
+        return if (lastSuccessfulFeedSnapshot.isNotEmpty()) lastSuccessfulFeedSnapshot else sampleBackupCatalog
+    }
+
+    fun getOfflineEmergencyCatalog(): List<MediaItem> {
+        return sampleBackupCatalog
     }
 
     suspend fun searchMedia(query: String): List<MediaItem> = withContext(Dispatchers.IO) {
@@ -151,27 +161,26 @@ class MediaRepository(private val context: Context) {
     }
 
     private fun mapServ1ToMediaItem(item: Serv1Item, index: Int = 0): MediaItem {
-        val mirrorIndex = Math.abs((item.id.hashCode() + index)) % RELIABLE_VIDEO_MIRRORS.size
-        // Direct reliable mirror stream ensures videos load 100% of the time with zero buffering crashes
-        val verifiedStreamUrl = RELIABLE_VIDEO_MIRRORS[mirrorIndex]
+        val streamUrl = "https://videorecoptilet-ipt-serv1.rejh.workers.dev/video?id=${item.id}"
+        val downloadUrl = "https://videorecoptilet-ipt-serv1.rejh.workers.dev/stream?id=${item.id}"
 
         val thumbUrl = if (item.id.isNotBlank() && !item.id.startsWith("sample_")) {
             "https://img.youtube.com/vi/${item.id}/mqdefault.jpg"
         } else {
-            SAMPLE_THUMBNAILS[mirrorIndex % SAMPLE_THUMBNAILS.size]
+            SAMPLE_THUMBNAILS[Math.abs(item.id.hashCode()) % SAMPLE_THUMBNAILS.size]
         }
 
         return MediaItem(
             id = item.id,
             title = item.title ?: "Medio (${item.id})",
-            author = item.author ?: "JHTube Creador",
-            streamUrl = verifiedStreamUrl,
-            downloadUrl = verifiedStreamUrl,
-            fallbackUrl = verifiedStreamUrl,
+            author = item.author ?: "JHTUBE Creador",
+            streamUrl = streamUrl,
+            downloadUrl = downloadUrl,
+            fallbackUrl = MediaRepository.RELIABLE_VIDEO_MIRRORS[Math.abs(item.id.hashCode()) % MediaRepository.RELIABLE_VIDEO_MIRRORS.size],
             thumbnailUrl = thumbUrl,
             durationSeconds = 240L,
-            resolutionLabel = "480p Eco",
-            fileSizeBytes = 18 * 1024 * 1024L,
+            resolutionLabel = "144p Ultra-Ahorro",
+            fileSizeBytes = 12 * 1024 * 1024L,
             category = "General"
         )
     }
@@ -215,8 +224,13 @@ class MediaRepository(private val context: Context) {
         val extension = if (item.isAudioOnly) "mp3" else "mp4"
         val targetFile = File(downloadsDir, "${cleanId}_${System.currentTimeMillis()}.$extension")
 
-        val targetUrl = item.downloadUrl.takeIf { it.isNotBlank() && it.startsWith("http") }
-            ?: (item.fallbackUrl ?: RELIABLE_VIDEO_MIRRORS[0])
+        val targetUrl = if (item.id.startsWith("sample_") || item.id.startsWith("direct_")) {
+            item.downloadUrl.takeIf { it.isNotBlank() && it.startsWith("http") }
+                ?: (item.fallbackUrl ?: RELIABLE_VIDEO_MIRRORS[0])
+        } else {
+            // Use the comprehensive /stream?id=... endpoint which correctly handles video muxing
+            "https://videorecoptilet-ipt-serv1.rejh.workers.dev/stream?id=${item.id}"
+        }
 
         val downloadResult = downloadFromUrl(targetUrl, targetFile, onProgress)
         if (downloadResult.isFailure) {
@@ -254,9 +268,15 @@ class MediaRepository(private val context: Context) {
             val okHttpClient = okhttp3.OkHttpClient.Builder()
                 .connectTimeout(20, java.util.concurrent.TimeUnit.SECONDS)
                 .readTimeout(60, java.util.concurrent.TimeUnit.SECONDS)
+                .protocols(listOf(okhttp3.Protocol.HTTP_1_1))
                 .build()
 
-            val request = okhttp3.Request.Builder().url(url).build()
+            val request = okhttp3.Request.Builder()
+                .url(url)
+                .addHeader("User-Agent", "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36")
+                .addHeader("Referer", "https://www.youtube.com/")
+                .addHeader("Origin", "https://www.youtube.com")
+                .build()
             val response = okHttpClient.newCall(request).execute()
             val body = response.body ?: return@withContext Result.failure(IllegalStateException("Respuesta vacía"))
 

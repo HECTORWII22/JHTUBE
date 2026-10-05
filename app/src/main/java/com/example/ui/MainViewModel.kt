@@ -55,6 +55,8 @@ data class MainUiState(
     val searchResults: List<MediaItem> = emptyList(),
     val isSearching: Boolean = false,
     val selectedCategory: String = "Todo",
+    val currentCatalogVersionTitle: String = "En Vivo (Servidor)",
+    val isOfflineCachedMode: Boolean = false,
     
     // Downloads & Library
     val downloadedItems: List<MediaItem> = emptyList(),
@@ -156,17 +158,47 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _uiState.update {
                     it.copy(
                         catalogItems = items,
-                        isCatalogLoading = false
+                        isCatalogLoading = false,
+                        currentCatalogVersionTitle = "En Vivo (Servidor)",
+                        isOfflineCachedMode = false
                     )
                 }
             } catch (e: Exception) {
+                val fallbackItems = mediaRepo.getPreviousSavedVersion()
                 _uiState.update {
                     it.copy(
+                        catalogItems = fallbackItems,
                         isCatalogLoading = false,
-                        catalogError = "Modo sin conexión activado: ${e.localizedMessage}"
+                        catalogError = "Sin conexión con el servidor. Mostrando versión guardada anterior.",
+                        currentCatalogVersionTitle = "Última Sesión Guardada (Caché)",
+                        isOfflineCachedMode = true
                     )
                 }
             }
+        }
+    }
+
+    fun loadPreviousSavedVersion() {
+        val previousItems = mediaRepo.getPreviousSavedVersion()
+        _uiState.update {
+            it.copy(
+                catalogItems = previousItems,
+                currentCatalogVersionTitle = "Última Sesión Guardada (${previousItems.size} videos)",
+                isOfflineCachedMode = true,
+                catalogError = "Mostrando versión previa guardada en memoria local."
+            )
+        }
+    }
+
+    fun loadOfflineEmergencyCatalog() {
+        val offlineItems = mediaRepo.getOfflineEmergencyCatalog()
+        _uiState.update {
+            it.copy(
+                catalogItems = offlineItems,
+                currentCatalogVersionTitle = "Catálogo Offline 2G/3G (${offlineItems.size} videos)",
+                isOfflineCachedMode = true,
+                catalogError = "Mostrando catálogo preinstalado para modo sin datos."
+            )
         }
     }
 
@@ -182,8 +214,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun searchCatalog(query: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isSearching = true) }
+            val cleanedQuery = query.trim()
+            val parsedVideoId = extractYoutubeVideoId(cleanedQuery)
+            if (parsedVideoId != null) {
+                // If they search a YouTube URL, immediately return a search result for that video
+                val resolvedItem = MediaItem(
+                    id = parsedVideoId,
+                    title = "Video Enlazado ($parsedVideoId)",
+                    author = "YouTube / JHTUBE",
+                    streamUrl = "https://videorecoptilet-ipt-serv1.rejh.workers.dev/video?id=$parsedVideoId",
+                    downloadUrl = "https://videorecoptilet-ipt-serv1.rejh.workers.dev/dl?id=$parsedVideoId",
+                    fallbackUrl = "https://videorecoptilet-ipt-serv1.rejh.workers.dev/video?id=$parsedVideoId",
+                    durationSeconds = 240L,
+                    resolutionLabel = "144p Ultra-Ahorro"
+                )
+                _uiState.update {
+                    it.copy(
+                        searchResults = listOf(resolvedItem),
+                        isSearching = false
+                    )
+                }
+                return@launch
+            }
             try {
-                val results = mediaRepo.searchMedia(query)
+                val results = mediaRepo.searchMedia(cleanedQuery)
                 _uiState.update {
                     it.copy(
                         searchResults = results,
@@ -194,6 +248,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _uiState.update { it.copy(isSearching = false) }
             }
         }
+    }
+
+    private fun extractYoutubeVideoId(url: String): String? {
+        val pattern = "^(?:https?:\\/\\/)?(?:www\\.|m\\.)?(?:youtube\\.com\\/(?:watch\\?\\S*v=|embed\\/|v\\/)|youtu\\.be\\/)([a-zA-Z0-9_-]{11})"
+        val regex = Regex(pattern)
+        val matchResult = regex.find(url)
+        return matchResult?.groupValues?.get(1)
     }
 
     fun playMedia(item: MediaItem, forceAudioOnly: Boolean = false) {
@@ -210,17 +271,33 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun playDirectUrl(url: String) {
         if (url.isBlank()) return
-        val customItem = MediaItem(
-            id = "direct_${System.currentTimeMillis()}",
-            title = "Enlace Directo",
-            author = "Transmisión Personalizada",
-            streamUrl = url.trim(),
-            downloadUrl = url.trim(),
-            fallbackUrl = url.trim(),
-            durationSeconds = 180L,
-            resolutionLabel = "Directo"
-        )
-        playMedia(customItem)
+        val cleanedUrl = url.trim()
+        val videoId = extractYoutubeVideoId(cleanedUrl)
+        if (videoId != null) {
+            val customItem = MediaItem(
+                id = videoId,
+                title = "Video Enlazado",
+                author = "YouTube / JHTUBE",
+                streamUrl = "https://videorecoptilet-ipt-serv1.rejh.workers.dev/video?id=$videoId",
+                downloadUrl = "https://videorecoptilet-ipt-serv1.rejh.workers.dev/stream?id=$videoId",
+                fallbackUrl = "https://videorecoptilet-ipt-serv1.rejh.workers.dev/video?id=$videoId",
+                durationSeconds = 240L,
+                resolutionLabel = "144p Ultra-Ahorro"
+            )
+            playMedia(customItem)
+        } else {
+            val customItem = MediaItem(
+                id = "direct_${System.currentTimeMillis()}",
+                title = "Enlace Directo",
+                author = "Transmisión Personalizada",
+                streamUrl = cleanedUrl,
+                downloadUrl = cleanedUrl,
+                fallbackUrl = cleanedUrl,
+                durationSeconds = 180L,
+                resolutionLabel = "Directo"
+            )
+            playMedia(customItem)
+        }
     }
 
     private fun recordHistory(item: MediaItem, positionMs: Long, durationMs: Long) {

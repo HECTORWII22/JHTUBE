@@ -52,10 +52,12 @@ import com.example.data.model.MessageSender
 import com.example.ui.theme.DarkCardBackground
 import com.example.ui.theme.DarkCardBorder
 import com.example.ui.theme.DarkSurfaceVariant
+import com.example.ui.theme.JhTubeRed
 import com.example.ui.theme.NeonAmber
 import com.example.ui.theme.NeonCyan
 import com.example.ui.theme.NeonEmerald
 import com.example.ui.theme.PureBlack
+import com.example.ui.theme.PureWhite
 import com.example.ui.theme.TextDisabled
 import com.example.ui.theme.TextHighEmphasis
 import com.example.ui.theme.TextMediumEmphasis

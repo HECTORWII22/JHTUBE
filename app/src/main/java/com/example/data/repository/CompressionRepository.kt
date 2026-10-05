@@ -27,6 +27,7 @@ import java.io.FileOutputStream
 import java.nio.ByteBuffer
 import kotlin.coroutines.coroutineContext
 
+@androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 class CompressionRepository(private val context: Context) {
     companion object {
         private const val TAG = "CompressionRepository"
@@ -192,6 +193,7 @@ class CompressionRepository(private val context: Context) {
         Result.success(outputFile)
     }
 
+    @android.annotation.SuppressLint("WrongConstant")
     private suspend fun runFallbackTranscoder(
         inputFile: File,
         outputFile: File,

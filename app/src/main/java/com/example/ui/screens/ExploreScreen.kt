@@ -23,9 +23,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Compress
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Headphones
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Inventory2
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
@@ -83,10 +87,16 @@ fun ExploreScreen(
     searchQuery: String,
     selectedCategory: String,
     activeDownloadingId: String?,
+    currentCatalogVersionTitle: String = "En Vivo (Servidor)",
+    isOfflineCachedMode: Boolean = false,
     onToggleLowDataMode: () -> Unit,
     onSearchQueryChanged: (String) -> Unit,
     onCategorySelected: (String) -> Unit,
     onRefresh: () -> Unit,
+    onLoadPreviousVersion: () -> Unit = {},
+    onLoadOfflineCatalog: () -> Unit = {},
+    onOpenDownloads: () -> Unit = {},
+    onOpenHistory: () -> Unit = {},
     onPlayMedia: (MediaItem, Boolean) -> Unit,
     onDownloadMedia: (MediaItem) -> Unit,
     onCompressMedia: (MediaItem) -> Unit,
@@ -305,6 +315,146 @@ fun ExploreScreen(
 
         Spacer(modifier = Modifier.height(10.dp))
 
+        // Version & Previous Content Quick Access Bar
+        Surface(
+            color = if (isOfflineCachedMode) NeonAmber.copy(alpha = 0.12f) else DarkSurfaceVariant,
+            shape = RoundedCornerShape(12.dp),
+            border = androidx.compose.foundation.BorderStroke(
+                1.dp,
+                if (isOfflineCachedMode) NeonAmber.copy(alpha = 0.5f) else DarkCardBorder
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 6.dp)
+        ) {
+            Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = if (isOfflineCachedMode) Icons.Default.CloudOff else Icons.Default.CloudDone,
+                            contentDescription = null,
+                            tint = if (isOfflineCachedMode) NeonAmber else NeonEmerald,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = currentCatalogVersionTitle,
+                            color = if (isOfflineCachedMode) NeonAmber else TextHighEmphasis,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Text(
+                        text = "${catalogItems.size} videos listados",
+                        color = TextMediumEmphasis,
+                        fontSize = 10.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                // Action buttons for previous versions and offline access
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Surface(
+                        color = DarkCardBackground,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { onLoadPreviousVersion() }
+                            .testTag("load_previous_version_btn")
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(vertical = 5.dp, horizontal = 4.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.History,
+                                contentDescription = null,
+                                tint = NeonCyan,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(
+                                text = "Versión Previa",
+                                color = TextHighEmphasis,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+
+                    Surface(
+                        color = DarkCardBackground,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { onLoadOfflineCatalog() }
+                            .testTag("load_offline_catalog_btn")
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(vertical = 5.dp, horizontal = 4.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Inventory2,
+                                contentDescription = null,
+                                tint = NeonAmber,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(
+                                text = "Catálogo 2G/3G",
+                                color = TextHighEmphasis,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+
+                    Surface(
+                        color = DarkCardBackground,
+                        shape = RoundedCornerShape(8.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { onOpenDownloads() }
+                            .testTag("open_downloads_quick_btn")
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(vertical = 5.dp, horizontal = 4.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Download,
+                                contentDescription = null,
+                                tint = NeonEmerald,
+                                modifier = Modifier.size(12.dp)
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(
+                                text = "Descargas",
+                                color = TextHighEmphasis,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
         // Catalog Content
         if (isLoading) {
             Box(
@@ -330,18 +480,49 @@ fun ExploreScreen(
                     .padding(24.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
+                        .background(DarkSurfaceVariant, RoundedCornerShape(16.dp))
+                        .padding(20.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.CloudOff,
+                        contentDescription = null,
+                        tint = NeonAmber,
+                        modifier = Modifier.size(40.dp)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "No se encontraron elementos.",
+                        text = "No se pudo conectar con el servidor",
                         color = TextHighEmphasis,
-                        fontSize = 14.sp
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "Prueba con otra búsqueda o recarga el catálogo.",
+                        text = "Puedes acceder a las versiones guardadas en tu última sesión o al catálogo offline para no consumir datos.",
                         color = TextMediumEmphasis,
-                        fontSize = 12.sp
+                        fontSize = 12.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
+                    Spacer(modifier = Modifier.height(14.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = { onLoadPreviousVersion() },
+                            colors = ButtonDefaults.buttonColors(containerColor = JhTubeRed),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("🕒 Ver Sesión Anterior", fontSize = 12.sp)
+                        }
+                        Button(
+                            onClick = { onLoadOfflineCatalog() },
+                            colors = ButtonDefaults.buttonColors(containerColor = DarkCardBackground),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("📦 Catálogo 2G", fontSize = 12.sp, color = TextHighEmphasis)
+                        }
+                    }
                 }
             }
         } else {

@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.BatterySaver
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -239,10 +240,16 @@ class MainActivity : ComponentActivity() {
                                     searchQuery = uiState.searchQuery,
                                     selectedCategory = uiState.selectedCategory,
                                     activeDownloadingId = uiState.activeDownloadingId,
+                                    currentCatalogVersionTitle = uiState.currentCatalogVersionTitle,
+                                    isOfflineCachedMode = uiState.isOfflineCachedMode,
                                     onToggleLowDataMode = { viewModel.toggleLowDataMode() },
                                     onSearchQueryChanged = { viewModel.onSearchQueryChanged(it) },
                                     onCategorySelected = { viewModel.selectCategory(it) },
                                     onRefresh = { viewModel.loadCatalog() },
+                                    onLoadPreviousVersion = { viewModel.loadPreviousSavedVersion() },
+                                    onLoadOfflineCatalog = { viewModel.loadOfflineEmergencyCatalog() },
+                                    onOpenDownloads = { viewModel.selectTab(AppTab.LIBRARY) },
+                                    onOpenHistory = { viewModel.selectTab(AppTab.HISTORY) },
                                     onPlayMedia = { item, forceAudio -> viewModel.playMedia(item, forceAudio) },
                                     onDownloadMedia = { viewModel.startDownload(it) },
                                     onCompressMedia = { viewModel.openCompressionDialog(it) },
@@ -256,6 +263,8 @@ class MainActivity : ComponentActivity() {
                                     isAudioOnly = uiState.isAudioOnlyPlayback,
                                     playbackSpeed = uiState.playbackSpeed,
                                     selectedQuality = uiState.selectedQuality,
+                                    downloadedItems = uiState.downloadedItems,
+                                    onPlayMedia = { viewModel.playMedia(it, it.isAudioOnly) },
                                     onToggleAudioOnly = { viewModel.toggleAudioOnly() },
                                     onSpeedChanged = { viewModel.setPlaybackSpeed(it) },
                                     onQualitySelected = { viewModel.setPlaybackQuality(it) },

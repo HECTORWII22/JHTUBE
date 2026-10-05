@@ -47,11 +47,17 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.material.icons.filled.PlayArrow
 import com.example.data.model.MediaItem
 import com.example.ui.components.ExoPlayerView
 import com.example.ui.theme.DarkCardBackground
 import com.example.ui.theme.DarkCardBorder
 import com.example.ui.theme.DarkSurfaceVariant
+import com.example.ui.theme.IconGray
 import com.example.ui.theme.JhTubeRed
 import com.example.ui.theme.NeonAmber
 import com.example.ui.theme.NeonCyan
@@ -68,6 +74,8 @@ fun PlayerScreen(
     isAudioOnly: Boolean,
     playbackSpeed: Float,
     selectedQuality: String,
+    downloadedItems: List<MediaItem> = emptyList(),
+    onPlayMedia: (MediaItem) -> Unit = {},
     onToggleAudioOnly: () -> Unit,
     onSpeedChanged: (Float) -> Unit,
     onQualitySelected: (String) -> Unit,
@@ -243,6 +251,40 @@ fun PlayerScreen(
                     }
                 }
 
+                // Download Button
+                if (!currentMedia.isDownloaded) {
+                    Surface(
+                        color = DarkSurfaceVariant,
+                        shape = RoundedCornerShape(10.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, NeonEmerald.copy(alpha = 0.5f)),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { onDownload(currentMedia) }
+                            .testTag("player_download_pill")
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Download,
+                                contentDescription = null,
+                                tint = NeonEmerald,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Descargar",
+                                color = NeonEmerald,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+
                 // AI Summarize Button
                 Surface(
                     color = DarkSurfaceVariant,
@@ -389,6 +431,103 @@ fun PlayerScreen(
                             color = TextMediumEmphasis,
                             fontSize = 10.sp
                         )
+                    }
+                }
+            }
+
+            // Quick Offline Playback List: lists other cached videos from Room database for instant play
+            val otherOfflineItems = remember(downloadedItems, currentMedia) {
+                downloadedItems.filter { it.id != currentMedia?.id }
+            }
+            if (otherOfflineItems.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(18.dp))
+                Text(
+                    text = "Más Videos Locales (Descargados)",
+                    color = TextHighEmphasis,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    otherOfflineItems.forEach { item ->
+                        Surface(
+                            color = DarkSurfaceVariant,
+                            shape = RoundedCornerShape(10.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onPlayMedia(item) }
+                                .testTag("player_offline_item_${item.id}")
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .width(72.dp)
+                                        .aspectRatio(16f / 9f)
+                                        .clip(RoundedCornerShape(6.dp))
+                                        .background(PureBlack),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (!item.thumbnailUrl.isNullOrBlank()) {
+                                        coil.compose.AsyncImage(
+                                            model = item.thumbnailUrl,
+                                            contentDescription = null,
+                                            contentScale = ContentScale.Crop,
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .size(20.dp)
+                                            .clip(CircleShape)
+                                            .background(Color(0x99000000)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.PlayArrow,
+                                            contentDescription = null,
+                                            tint = PureWhite,
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                    }
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = item.title,
+                                        color = TextHighEmphasis,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        maxLines = 1
+                                    )
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text(
+                                            text = item.author,
+                                            color = TextMediumEmphasis,
+                                            fontSize = 9.sp
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = item.resolutionLabel,
+                                            color = JhTubeRed,
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = "(${item.formattedSize})",
+                                            color = TextMediumEmphasis,
+                                            fontSize = 9.sp
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }

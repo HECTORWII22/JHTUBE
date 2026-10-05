@@ -58,8 +58,8 @@ class ExponentialBackoffLoadErrorHandlingPolicy(
             nextBackoffMs = 0L
         )
 
-        // For non-recoverable HTTP errors like 403 Forbidden or 404 Not Found, fail fast
-        if (diagnostic.httpStatusCode in listOf(401, 403, 404, 410)) {
+        // For non-recoverable HTTP errors like 401, 403, 404, 410, 500, 503 (video no disponible), fail fast to trigger immediate failover
+        if (diagnostic.httpStatusCode in listOf(401, 403, 404, 410, 500, 502, 503, 504)) {
             Log.w(TAG, "Non-retryable HTTP ${diagnostic.httpStatusCode} on $uri - aborting loader retries to failover immediately.")
             ExoNetworkLogger.logNetworkFailure(diagnostic)
             onDiagnosticCaptured?.invoke(diagnostic)
@@ -78,6 +78,7 @@ class ExponentialBackoffLoadErrorHandlingPolicy(
     }
 }
 
+@OptIn(UnstableApi::class)
 object ExoNetworkLogger {
     const val TAG = "ExoPlayerNetwork"
 

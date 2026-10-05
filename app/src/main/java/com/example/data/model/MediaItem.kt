@@ -16,6 +16,8 @@ data class VideoStreamResponse(
     @Json(name = "title") val title: String? = null,
     @Json(name = "author") val author: String? = null,
     @Json(name = "mediaUrl") val mediaUrl: String? = null,
+    @Json(name = "streamUrl") val streamUrl: String? = null,
+    @Json(name = "url") val url: String? = null,
     @Json(name = "muxed") val muxed: Boolean = true,
     @Json(name = "kind") val kind: String? = null,
     @Json(name = "quality") val quality: String? = null,

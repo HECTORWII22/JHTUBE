@@ -22,7 +22,7 @@ interface Serv1Api {
     ): Response<VideoStreamResponse>
 
     @Streaming
-    @GET("dl")
+    @GET("stream")
     suspend fun downloadMedia(
         @Query("id") id: String,
         @Query("audio") audio: Int = 0
