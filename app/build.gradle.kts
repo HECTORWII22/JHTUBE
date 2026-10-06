@@ -1,4 +1,5 @@
 import com.google.gms.googleservices.GoogleServicesPlugin.MissingGoogleServicesStrategy
+import java.io.File
 
 plugins {
   alias(libs.plugins.android.application)
@@ -36,6 +37,26 @@ android {
       keyAlias = "androiddebugkey"
       keyPassword = "android"
     }
+  }
+
+  val keystorePath = rootProject.file("debug.keystore").absolutePath
+  val generateDebugKeystore by tasks.registering {
+    val kPath = keystorePath
+    doLast {
+      val keystoreFile = File(kPath)
+      if (!keystoreFile.exists()) {
+        try {
+          ProcessBuilder("keytool", "-genkey", "-v", "-keystore", keystoreFile.absolutePath, "-storepass", "android", "-alias", "androiddebugkey", "-keypass", "android", "-keyalg", "RSA", "-keysize", "2048", "-validity", "10000", "-dname", "CN=Android Debug,O=Android,C=US")
+              .redirectErrorStream(true)
+              .start()
+              .waitFor()
+        } catch (_: Exception) {}
+      }
+    }
+  }
+
+  tasks.matching { it.name == "validateSigningDebug" }.configureEach {
+    dependsOn(generateDebugKeystore)
   }
 
   buildTypes {
