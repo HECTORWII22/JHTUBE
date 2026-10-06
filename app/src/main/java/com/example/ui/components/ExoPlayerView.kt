@@ -651,6 +651,45 @@ fun ExoPlayerView(
 
                         Spacer(modifier = Modifier.height(10.dp))
 
+                        // Anti-Adblock & Firewall Bypass Tunnel Card
+                        Surface(
+                            color = PureBlack,
+                            shape = RoundedCornerShape(8.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, NeonAmber),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(10.dp)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Info,
+                                        contentDescription = null,
+                                        tint = NeonAmber,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "Sistema Anti-Bloqueo & Proxy Tunnel",
+                                        color = NeonAmber,
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "• Estado: Activo (Bypass de DNS y filtros ISP/Adblock)",
+                                    color = TextHighEmphasis,
+                                    fontSize = 11.sp
+                                )
+                                Text(
+                                    text = "• Túnel cifrado: Redirección automática a servidores espejo seguros ante bloqueos HTTP 403/503.",
+                                    color = TextMediumEmphasis,
+                                    fontSize = 10.sp
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
                         // SimpleCache Card
                         Surface(
                             color = PureBlack,

@@ -55,6 +55,8 @@ import com.example.ui.AppTab
 import com.example.ui.MainViewModel
 import com.example.ui.components.CompressionDialog
 import com.example.ui.components.MiniPlayerBar
+import com.example.ui.components.NoInternetScreen
+import com.example.util.NetworkMonitor
 import com.example.ui.screens.AiAssistantScreen
 import com.example.ui.screens.ExploreScreen
 import com.example.ui.screens.HistoryScreen
@@ -89,6 +91,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MyApplicationTheme {
+                val isConnected by NetworkMonitor.observeNetwork(applicationContext).collectAsStateWithLifecycle(initialValue = true)
                 val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
                 // Hardware back handler returns to Explore tab
@@ -96,7 +99,12 @@ class MainActivity : ComponentActivity() {
                     viewModel.selectTab(AppTab.EXPLORE)
                 }
 
-                Scaffold(
+                if (!isConnected) {
+                    NoInternetScreen(onRetry = {
+                        // Retry action
+                    })
+                } else {
+                    Scaffold(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(PureWhite)
@@ -340,4 +348,5 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
 }
