@@ -31,7 +31,16 @@ android {
       keyPassword = System.getenv("KEY_PASSWORD")
     }
     create("debugConfig") {
-      storeFile = file("${rootDir}/debug.keystore")
+      val keystoreFile = rootProject.file("debug.keystore")
+      if (!keystoreFile.exists()) {
+        try {
+          ProcessBuilder("keytool", "-genkey", "-v", "-keystore", keystoreFile.absolutePath, "-storepass", "android", "-alias", "androiddebugkey", "-keypass", "android", "-keyalg", "RSA", "-keysize", "2048", "-validity", "10000", "-dname", "CN=Android Debug,O=Android,C=US")
+              .redirectErrorStream(true)
+              .start()
+              .waitFor()
+        } catch (_: Exception) {}
+      }
+      storeFile = keystoreFile
       storePassword = "android"
       keyAlias = "androiddebugkey"
       keyPassword = "android"
@@ -71,6 +80,24 @@ secrets {
 }
 
 googleServices { missingGoogleServicesStrategy = MissingGoogleServicesStrategy.WARN }
+
+val googleServicesJson = file("google-services.json")
+if (!googleServicesJson.exists()) {
+  try {
+    googleServicesJson.writeText("""
+      {
+        "project_info": { "project_number": "1234567890", "project_id": "dummy", "storage_bucket": "dummy.appspot.com" },
+        "client": [{
+          "client_info": { "mobilesdk_app_id": "1:1234567890:android:abcdef", "android_client_info": { "package_name": "com.aistudio.streamlite.qrvxnz" } },
+          "oauth_client": [],
+          "api_key": [{ "current_key": "AIzaSyDummyKey" }],
+          "services": { "analytics_service": { "status": 1 } }
+        }],
+        "configuration_version": "1"
+      }
+    """.trimIndent())
+  } catch (_: Exception) {}
+}
 
 // Some unused dependencies are commented out below instead of being removed.
 // This makes it easy to add them back in the future if needed.
