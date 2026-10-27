@@ -33,6 +33,15 @@ interface MediaDao {
     @Query("DELETE FROM playback_history WHERE id = :id")
     suspend fun deleteHistoryById(id: String)
 
-    @Query("DELETE FROM playback_history")
+    @androidx.room.Query("SELECT * FROM playlists ORDER BY createdAtEpochMs DESC")
+    fun getAllPlaylistsFlow(): kotlinx.coroutines.flow.Flow<List<PlaylistEntity>>
+
+    @androidx.room.Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
+    suspend fun insertPlaylist(playlist: PlaylistEntity)
+
+    @androidx.room.Query("DELETE FROM playlists WHERE id = :id")
+    suspend fun deletePlaylistById(id: String)
+
+    @androidx.room.Query("DELETE FROM playback_history")
     suspend fun clearAllHistory()
 }

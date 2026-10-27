@@ -9,6 +9,7 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,6 +22,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.BatterySaver
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.PlayArrow
@@ -62,6 +64,7 @@ import com.example.ui.screens.ExploreScreen
 import com.example.ui.screens.HistoryScreen
 import com.example.ui.screens.LibraryScreen
 import com.example.ui.screens.PlayerScreen
+import com.example.ui.screens.ShortsFeedScreen
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.IconButton
 import com.example.ui.screens.AboutRniScreen
@@ -103,142 +106,151 @@ class MainActivity : ComponentActivity() {
                     NoInternetScreen(onRetry = {
                         // Retry action
                     })
-                } else {
-                    Scaffold(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(PureWhite)
-                        .testTag("main_scaffold"),
-                    containerColor = PureWhite,
-                    topBar = {
-                        TopAppBar(
-                            colors = TopAppBarDefaults.topAppBarColors(
-                                containerColor = PureWhite,
-                                titleContentColor = PureBlack
-                            ),
-                            title = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    // JHTube Iconic Red Play Badge
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = JhTubeRed,
-                                        modifier = Modifier.size(32.dp)
-                                    ) {
-                                        Box(contentAlignment = Alignment.Center) {
-                                            Icon(
-                                                imageVector = Icons.Default.PlayArrow,
-                                                contentDescription = null,
-                                                tint = PureWhite,
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "JHTUBE",
-                                        color = PureBlack,
-                                        fontSize = 20.sp,
-                                        fontWeight = FontWeight.Black,
-                                        letterSpacing = (-0.5).sp
-                                    )
-                                }
-                            },
-                            actions = {
-                                IconButton(
-                                    onClick = { viewModel.selectTab(AppTab.ABOUT_RNI) },
-                                    modifier = Modifier.testTag("top_bar_about_rni_button")
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Info,
-                                        contentDescription = "Sobre JHTUBE",
-                                        tint = IconGray
-                                    )
-                                }
-                                // Battery / Data Saver indicator
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(end = 12.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.BatterySaver,
-                                        contentDescription = "Ahorro de batería y datos",
-                                        tint = if (uiState.isLowDataMode) JhTubeRed else IconGray,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(
-                                        text = if (uiState.isLowDataMode) "2G/3G Eco" else "Normal",
-                                        color = if (uiState.isLowDataMode) JhTubeRed else TextMediumEmphasis,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                            }
-                        )
-                    },
-                    bottomBar = {
-                        Column {
-                            // Mini Player Bar if video active and currently on another screen
-                            if (uiState.currentPlayingItem != null && uiState.currentTab != AppTab.PLAYER) {
-                                MiniPlayerBar(
-                                    item = uiState.currentPlayingItem!!,
-                                    isAudioOnly = uiState.isAudioOnlyPlayback,
-                                    onClick = { viewModel.selectTab(AppTab.PLAYER) }
-                                )
-                            }
-
-                            // Bottom Navigation (Clean White with JhTube Red & Gray Icons)
-                            NavigationBar(
-                                containerColor = PureWhite,
-                                modifier = Modifier.testTag("bottom_nav_bar")
-                            ) {
-                                val navItems = listOf(
-                                    Triple(AppTab.EXPLORE, "Explorar", Icons.Default.Explore),
-                                    Triple(AppTab.PLAYER, "Reproductor", Icons.Default.PlayCircle),
-                                    Triple(AppTab.LIBRARY, "Biblioteca", Icons.Default.VideoLibrary),
-                                    Triple(AppTab.HISTORY, "Historial", Icons.Default.History),
-                                    Triple(AppTab.ABOUT_RNI, "Sobre JHTube", Icons.Default.Info)
-                                )
-
-                                navItems.forEach { (tab, label, icon) ->
-                                    val isSelected = uiState.currentTab == tab
-                                    NavigationBarItem(
-                                        selected = isSelected,
-                                        onClick = { viewModel.selectTab(tab) },
-                                        icon = {
-                                            Icon(
-                                                imageVector = icon,
-                                                contentDescription = label,
-                                                tint = if (isSelected) JhTubeRed else IconGray
-                                            )
-                                        },
-                                        label = {
-                                            Text(
-                                                text = label,
-                                                color = if (isSelected) JhTubeRed else IconGray,
-                                                fontSize = 10.sp,
-                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                            )
-                                        },
-                                        colors = NavigationBarItemDefaults.colors(
-                                            indicatorColor = LightSurfaceVariant,
-                                            selectedIconColor = JhTubeRed,
-                                            selectedTextColor = JhTubeRed,
-                                            unselectedIconColor = IconGray,
-                                            unselectedTextColor = IconGray
-                                        ),
-                                        modifier = Modifier.testTag("nav_tab_${tab.name.lowercase()}")
-                                    )
-                                }
-                            }
-                        }
-                    }
-                ) { innerPadding ->
+                } else if (uiState.currentTab == AppTab.SHORTS) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(innerPadding)
+                            .background(PureBlack)
                     ) {
+                        ShortsFeedScreen()
+                    }
+                } else {
+                    Scaffold(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(PureWhite)
+                            .testTag("main_scaffold"),
+                        containerColor = PureWhite,
+                        topBar = {
+                            TopAppBar(
+                                colors = TopAppBarDefaults.topAppBarColors(
+                                    containerColor = PureWhite,
+                                    titleContentColor = PureBlack
+                                ),
+                                title = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        // JHTube Iconic Red Play Badge
+                                        Surface(
+                                            shape = RoundedCornerShape(8.dp),
+                                            color = JhTubeRed,
+                                            modifier = Modifier.size(32.dp)
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Icon(
+                                                    imageVector = Icons.Default.PlayArrow,
+                                                    contentDescription = null,
+                                                    tint = PureWhite,
+                                                    modifier = Modifier.size(20.dp)
+                                                )
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "JHTUBE",
+                                            color = PureBlack,
+                                            fontSize = 20.sp,
+                                            fontWeight = FontWeight.Black,
+                                            letterSpacing = (-0.5).sp
+                                        )
+                                    }
+                                },
+                                actions = {
+                                    IconButton(
+                                        onClick = { viewModel.selectTab(AppTab.ABOUT_RNI) },
+                                        modifier = Modifier.testTag("top_bar_about_rni_button")
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Info,
+                                            contentDescription = "Sobre JHTUBE",
+                                            tint = IconGray
+                                        )
+                                    }
+                                    // Battery / Data Saver indicator
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(end = 12.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.BatterySaver,
+                                            contentDescription = "Ahorro de batería y datos",
+                                            tint = if (uiState.isLowDataMode) JhTubeRed else IconGray,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = if (uiState.isLowDataMode) "0.0.1 kbps" else "Normal",
+                                            color = if (uiState.isLowDataMode) JhTubeRed else TextMediumEmphasis,
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            )
+                        },
+                        bottomBar = {
+                            Column {
+                                // Mini Player Bar if video active and currently on another screen
+                                if (uiState.currentPlayingItem != null && uiState.currentTab != AppTab.PLAYER) {
+                                    MiniPlayerBar(
+                                        item = uiState.currentPlayingItem!!,
+                                        isAudioOnly = uiState.isAudioOnlyPlayback,
+                                        onClick = { viewModel.selectTab(AppTab.PLAYER) }
+                                    )
+                                }
+
+                                // Bottom Navigation (Clean White with JhTube Red & Gray Icons)
+                                NavigationBar(
+                                    containerColor = PureWhite,
+                                    modifier = Modifier.testTag("bottom_nav_bar")
+                                ) {
+                                    val navItems = listOf(
+                                        Triple(AppTab.EXPLORE, "Explorar", Icons.Default.Explore),
+                                        Triple(AppTab.SHORTS, "Shorts", Icons.Default.Bolt),
+                                        Triple(AppTab.PLAYER, "Reproductor", Icons.Default.PlayCircle),
+                                        Triple(AppTab.LIBRARY, "Biblioteca", Icons.Default.VideoLibrary),
+                                        Triple(AppTab.HISTORY, "Historial", Icons.Default.History),
+                                        Triple(AppTab.ABOUT_RNI, "Sobre JHTube", Icons.Default.Info)
+                                    )
+
+                                    navItems.forEach { (tab, label, icon) ->
+                                        val isSelected = uiState.currentTab == tab
+                                        NavigationBarItem(
+                                            selected = isSelected,
+                                            onClick = { viewModel.selectTab(tab) },
+                                            icon = {
+                                                Icon(
+                                                    imageVector = icon,
+                                                    contentDescription = label,
+                                                    tint = if (isSelected) JhTubeRed else IconGray
+                                                )
+                                            },
+                                            label = {
+                                                Text(
+                                                    text = label,
+                                                    color = if (isSelected) JhTubeRed else IconGray,
+                                                    fontSize = 10.sp,
+                                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                                )
+                                            },
+                                            colors = NavigationBarItemDefaults.colors(
+                                                indicatorColor = LightSurfaceVariant,
+                                                selectedIconColor = JhTubeRed,
+                                                selectedTextColor = JhTubeRed,
+                                                unselectedIconColor = IconGray,
+                                                unselectedTextColor = IconGray
+                                            ),
+                                            modifier = Modifier.testTag("nav_tab_${tab.name.lowercase()}")
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    ) { innerPadding ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(innerPadding)
+                        ) {
                         when (uiState.currentTab) {
                             AppTab.EXPLORE -> {
                                 ExploreScreen(
@@ -327,6 +339,9 @@ class MainActivity : ComponentActivity() {
                                     isAskingGemini = uiState.isAskingGemini,
                                     onSendMessage = { viewModel.sendAiQuestion(it) }
                                 )
+                            }
+                            AppTab.SHORTS -> {
+                                ShortsFeedScreen()
                             }
                             AppTab.ABOUT_RNI -> {
                                 AboutRniScreen()

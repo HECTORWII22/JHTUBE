@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudOff
@@ -87,6 +88,7 @@ fun ExploreScreen(
     searchQuery: String,
     selectedCategory: String,
     activeDownloadingId: String?,
+    downloadProgress: Float = 0f,
     currentCatalogVersionTitle: String = "En Vivo (Servidor)",
     isOfflineCachedMode: Boolean = false,
     onToggleLowDataMode: () -> Unit,
@@ -248,7 +250,7 @@ fun ExploreScreen(
             onValueChange = onSearchQueryChanged,
             placeholder = {
                 Text(
-                    text = "Buscar en serv1 (Noticias, música, streams)...",
+                    text = "Buscar en Invidious Tiekoetter (WIIMMFI, videos)...",
                     color = TextMediumEmphasis,
                     fontSize = 12.sp
                 )
@@ -480,47 +482,85 @@ fun ExploreScreen(
                     .padding(24.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .background(DarkSurfaceVariant, RoundedCornerShape(16.dp))
-                        .padding(20.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.CloudOff,
-                        contentDescription = null,
-                        tint = NeonAmber,
-                        modifier = Modifier.size(40.dp)
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Text(
-                        text = "No se pudo conectar con el servidor",
-                        color = TextHighEmphasis,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = "Puedes acceder a las versiones guardadas en tu última sesión o al catálogo offline para no consumir datos.",
-                        color = TextMediumEmphasis,
-                        fontSize = 12.sp,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
-                    Spacer(modifier = Modifier.height(14.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (searchQuery.isNotBlank()) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .background(DarkSurfaceVariant, RoundedCornerShape(16.dp))
+                            .padding(20.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Search,
+                            contentDescription = null,
+                            tint = IconGray,
+                            modifier = Modifier.size(40.dp)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "Buscando videos para \"$searchQuery\"...",
+                            color = TextHighEmphasis,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Si la conexión es lenta (0.0.1 kbps), se cargarán automáticamente en breve.",
+                            color = TextMediumEmphasis,
+                            fontSize = 12.sp,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(14.dp))
                         Button(
-                            onClick = { onLoadPreviousVersion() },
+                            onClick = { onSearchQueryChanged("") },
                             colors = ButtonDefaults.buttonColors(containerColor = JhTubeRed),
                             shape = RoundedCornerShape(8.dp)
                         ) {
-                            Text("🕒 Ver Sesión Anterior", fontSize = 12.sp)
+                            Text("Limpiar Búsqueda", fontSize = 12.sp, color = PureWhite)
                         }
-                        Button(
-                            onClick = { onLoadOfflineCatalog() },
-                            colors = ButtonDefaults.buttonColors(containerColor = DarkCardBackground),
-                            shape = RoundedCornerShape(8.dp)
-                        ) {
-                            Text("📦 Catálogo 2G", fontSize = 12.sp, color = TextHighEmphasis)
+                    }
+                } else {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .background(DarkSurfaceVariant, RoundedCornerShape(16.dp))
+                            .padding(20.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CloudOff,
+                            contentDescription = null,
+                            tint = NeonAmber,
+                            modifier = Modifier.size(40.dp)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "No se pudo conectar con el servidor",
+                            color = TextHighEmphasis,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "Puedes acceder a las versiones guardadas en tu última sesión o al catálogo offline para no consumir datos.",
+                            color = TextMediumEmphasis,
+                            fontSize = 12.sp,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(
+                                onClick = { onLoadPreviousVersion() },
+                                colors = ButtonDefaults.buttonColors(containerColor = JhTubeRed),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text("🕒 Ver Sesión Anterior", fontSize = 12.sp)
+                            }
+                            Button(
+                                onClick = { onLoadOfflineCatalog() },
+                                colors = ButtonDefaults.buttonColors(containerColor = DarkCardBackground),
+                                shape = RoundedCornerShape(8.dp)
+                            ) {
+                                Text("📦 Catálogo 2G", fontSize = 12.sp, color = TextHighEmphasis)
+                            }
                         }
                     }
                 }
@@ -531,10 +571,20 @@ fun ExploreScreen(
                 contentPadding = PaddingValues(bottom = 80.dp),
                 modifier = Modifier.testTag("catalog_list")
             ) {
+                if (searchQuery.isBlank()) {
+                    item(key = "shorts_shelf_carousel") {
+                        ShortsShelfSection(
+                            onPlayShort = { shortItem -> onPlayMedia(shortItem, false) },
+                            onDownloadShort = { shortItem -> onDownloadMedia(shortItem) }
+                        )
+                    }
+                }
+
                 items(catalogItems, key = { it.id }) { item ->
                     MediaFeedCard(
                         item = item,
                         isDownloading = activeDownloadingId == item.id,
+                        downloadProgress = if (activeDownloadingId == item.id) downloadProgress else 0f,
                         onPlayNormal = { onPlayMedia(item, false) },
                         onPlayAudioOnly = { onPlayMedia(item, true) },
                         onDownload = { onDownloadMedia(item) },
@@ -551,6 +601,7 @@ fun ExploreScreen(
 fun MediaFeedCard(
     item: MediaItem,
     isDownloading: Boolean,
+    downloadProgress: Float = 0f,
     onPlayNormal: () -> Unit,
     onPlayAudioOnly: () -> Unit,
     onDownload: () -> Unit,
@@ -807,26 +858,259 @@ fun MediaFeedCard(
                             )
                         }
 
-                        IconButton(
-                            onClick = onDownload,
-                            enabled = !isDownloading,
-                            modifier = Modifier
-                                .size(34.dp)
-                                .testTag("download_item_button_${item.id}")
-                        ) {
-                            if (isDownloading) {
+                        if (isDownloading) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 4.dp)
+                            ) {
                                 CircularProgressIndicator(
                                     color = JhTubeRed,
                                     strokeWidth = 2.dp,
                                     modifier = Modifier.size(16.dp)
                                 )
-                            } else {
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "${(downloadProgress * 100).toInt()}%",
+                                    color = JhTubeRed,
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        } else {
+                            IconButton(
+                                onClick = onDownload,
+                                modifier = Modifier
+                                    .size(34.dp)
+                                    .testTag("download_item_button_${item.id}")
+                            ) {
                                 Icon(
                                     imageVector = Icons.Default.Download,
                                     contentDescription = "Descargar",
                                     tint = JhTubeRed,
                                     modifier = Modifier.size(18.dp)
                                 )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ShortsShelfSection(
+    onPlayShort: (MediaItem) -> Unit,
+    onDownloadShort: (MediaItem) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val trendingShorts = remember {
+        listOf(
+            MediaItem(
+                id = "short_wiimmfi_1",
+                title = "Atajo Secreto Mario Kart Wiimmfi #Shorts",
+                author = "MKWii Master",
+                streamUrl = com.example.data.repository.MediaRepository.RELIABLE_VIDEO_MIRRORS[0],
+                downloadUrl = com.example.data.repository.MediaRepository.RELIABLE_VIDEO_MIRRORS[0],
+                fallbackUrl = com.example.data.repository.MediaRepository.RELIABLE_VIDEO_MIRRORS[0],
+                durationSeconds = 45,
+                resolutionLabel = "Vertical HD",
+                thumbnailUrl = "https://invidious.tiekoetter.com/vi/6SfRqmXDa0A/hqdefault.jpg",
+                category = "Shorts"
+            ),
+            MediaItem(
+                id = "short_dolphin_2",
+                title = "Dolphin 60FPS en Android en 30 Segundos",
+                author = "EmuladorPro",
+                streamUrl = com.example.data.repository.MediaRepository.RELIABLE_VIDEO_MIRRORS[1],
+                downloadUrl = com.example.data.repository.MediaRepository.RELIABLE_VIDEO_MIRRORS[1],
+                fallbackUrl = com.example.data.repository.MediaRepository.RELIABLE_VIDEO_MIRRORS[1],
+                durationSeconds = 30,
+                resolutionLabel = "Vertical HD",
+                thumbnailUrl = "https://invidious.tiekoetter.com/vi/nX_POoe48BY/hqdefault.jpg",
+                category = "Shorts"
+            ),
+            MediaItem(
+                id = "short_revival_3",
+                title = "Cómo revivir tu Nintendo Wii en 2026 #Shorts",
+                author = "RetroCraft",
+                streamUrl = com.example.data.repository.MediaRepository.RELIABLE_VIDEO_MIRRORS[2],
+                downloadUrl = com.example.data.repository.MediaRepository.RELIABLE_VIDEO_MIRRORS[2],
+                fallbackUrl = com.example.data.repository.MediaRepository.RELIABLE_VIDEO_MIRRORS[2],
+                durationSeconds = 50,
+                resolutionLabel = "Vertical HD",
+                thumbnailUrl = "https://invidious.tiekoetter.com/vi/ZutIh8kCK1I/hqdefault.jpg",
+                category = "Shorts"
+            ),
+            MediaItem(
+                id = "short_speedrun_4",
+                title = "Speedrun Épico de Super Mario Galaxy",
+                author = "SpeedyRuns",
+                streamUrl = com.example.data.repository.MediaRepository.RELIABLE_VIDEO_MIRRORS[3],
+                downloadUrl = com.example.data.repository.MediaRepository.RELIABLE_VIDEO_MIRRORS[3],
+                fallbackUrl = com.example.data.repository.MediaRepository.RELIABLE_VIDEO_MIRRORS[3],
+                durationSeconds = 38,
+                resolutionLabel = "Vertical HD",
+                thumbnailUrl = "https://invidious.tiekoetter.com/vi/2j6KzWZveQ0/hqdefault.jpg",
+                category = "Shorts"
+            )
+        )
+    }
+
+    Column(modifier = modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 6.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = JhTubeRed,
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            imageVector = Icons.Default.Bolt,
+                            contentDescription = null,
+                            tint = PureWhite,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Shorts Destacados",
+                    color = PureBlack,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Black
+                )
+            }
+            Surface(
+                color = JhTubeRed.copy(alpha = 0.1f),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(
+                    text = "⚡ Descarga Rápida",
+                    color = JhTubeRed,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+            }
+        }
+
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(horizontal = 2.dp, vertical = 4.dp),
+            modifier = Modifier.fillMaxWidth().testTag("shorts_carousel_row")
+        ) {
+            items(trendingShorts, key = { it.id }) { shortItem ->
+                Surface(
+                    color = DarkCardBackground,
+                    shape = RoundedCornerShape(12.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder),
+                    modifier = Modifier
+                        .width(135.dp)
+                        .height(210.dp)
+                        .clickable { onPlayShort(shortItem) }
+                        .testTag("short_card_${shortItem.id}")
+                ) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        AsyncImage(
+                            model = shortItem.thumbnailUrl,
+                            contentDescription = shortItem.title,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        // Gradient overlay
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(
+                                    Brush.verticalGradient(
+                                        listOf(
+                                            Color.Transparent,
+                                            Color(0x66000000),
+                                            Color(0xDD000000)
+                                        )
+                                    )
+                                )
+                        )
+                        // Top Shorts Tag
+                        Surface(
+                            color = JhTubeRed,
+                            shape = RoundedCornerShape(bottomEnd = 8.dp),
+                            modifier = Modifier.align(Alignment.TopStart)
+                        ) {
+                            Text(
+                                text = "SHORTS",
+                                color = PureWhite,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Black,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+
+                        // Play Icon Center
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(Color(0x88000000))
+                                .align(Alignment.Center),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow,
+                                contentDescription = "Reproducir Short",
+                                tint = PureWhite,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+
+                        // Bottom Title and Fast Download Button
+                        Column(
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .padding(8.dp)
+                        ) {
+                            Text(
+                                text = shortItem.title,
+                                color = PureWhite,
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 2,
+                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "${shortItem.durationSeconds}s",
+                                    color = TextMediumEmphasis,
+                                    fontSize = 10.sp
+                                )
+                                Surface(
+                                    color = JhTubeRed,
+                                    shape = CircleShape,
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .clickable { onDownloadShort(shortItem) }
+                                        .testTag("download_short_${shortItem.id}")
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Icon(
+                                            imageVector = Icons.Default.Download,
+                                            contentDescription = "Descarga rápida",
+                                            tint = PureWhite,
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }

@@ -183,6 +183,11 @@ fun ExoPlayerView(
     var isRetrying by remember { mutableStateOf(false) }
     var backoffCountdownSeconds by remember { mutableIntStateOf(0) }
 
+    val isRealYouTubeVideo = remember(mediaItem.id) {
+        mediaItem.id.matches(Regex("[a-zA-Z0-9_-]{11}")) && (mediaItem.localFilePath == null || !File(mediaItem.localFilePath ?: "").exists())
+    }
+    var useDirectYouTubePlayer by remember(mediaItem.id) { mutableStateOf(isRealYouTubeVideo) }
+
     // Detailed network diagnostics
     var latestDiagnostic by remember { mutableStateOf<NetworkDiagnosticInfo?>(null) }
     var showDiagnosticDialog by remember { mutableStateOf(false) }
@@ -202,8 +207,8 @@ fun ExoPlayerView(
     val exoPlayer = remember(mediaItem.id) {
         val httpDataSourceFactory = DefaultHttpDataSource.Factory()
             .setAllowCrossProtocolRedirects(true)
-            .setConnectTimeoutMs(30000) // 30s connection timeout for ultra-low 1.0 kbps networks
-            .setReadTimeoutMs(45000)    // 45s read timeout for slow satellite / 2G data packets
+            .setConnectTimeoutMs(60000) // 60s connection timeout for 0.0.1 kbps networks
+            .setReadTimeoutMs(120000)   // 120s read timeout for 0.0.1 kbps trickle packets
             .setUserAgent("Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36")
 
         // SimpleCache Integration: local segment caching reduces data usage & prevents buffering
@@ -260,9 +265,14 @@ fun ExoPlayerView(
             }
     }
 
-    LaunchedEffect(mediaItem.id, isAudioOnly) {
+    LaunchedEffect(mediaItem.id, isAudioOnly, useDirectYouTubePlayer) {
         failoverStage = 1
         isUsingFallbackStream = false
+        if (isRealYouTubeVideo && useDirectYouTubePlayer && !isAudioOnly) {
+            exoPlayer.pause()
+            isBuffering = false
+            return@LaunchedEffect
+        }
         if (mediaItem.localFilePath != null && File(mediaItem.localFilePath).exists()) {
              // Local playback from device storage
              val uri = Uri.parse(mediaItem.localFilePath)
@@ -396,9 +406,10 @@ fun ExoPlayerView(
                     coroutineScope.launch {
                         delay(150)
                         val savedPos = exoPlayer.currentPosition.coerceAtLeast(0L)
-                        val mirrorUrl = mediaItem.fallbackUrl ?: MediaRepository.RELIABLE_VIDEO_MIRRORS[
-                            Math.abs(mediaItem.id.hashCode()) % MediaRepository.RELIABLE_VIDEO_MIRRORS.size
-                        ]
+                        val mirrorUrl = mediaItem.fallbackUrl?.takeIf { !it.contains("workers.dev") }
+                            ?: MediaRepository.RELIABLE_VIDEO_MIRRORS[
+                                Math.abs(mediaItem.id.hashCode()) % MediaRepository.RELIABLE_VIDEO_MIRRORS.size
+                            ]
                         val mirrorUri = Uri.parse(mirrorUrl)
                         val dataSourceFactory = DefaultHttpDataSource.Factory()
                             .setUserAgent("Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36")
@@ -490,7 +501,43 @@ fun ExoPlayerView(
             .testTag("exo_player_container")
             .clickable { showControls = !showControls }
     ) {
-        if (!isAudioOnly) {
+        if (isRealYouTubeVideo && useDirectYouTubePlayer && !isAudioOnly) {
+            AndroidView(
+                factory = { ctx ->
+                    android.webkit.WebView(ctx).apply {
+                        settings.javaScriptEnabled = true
+                        settings.domStorageEnabled = true
+                        settings.mediaPlaybackRequiresUserGesture = false
+                        settings.useWideViewPort = true
+                        settings.loadWithOverviewMode = true
+                        settings.userAgentString = "Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36"
+                        webChromeClient = android.webkit.WebChromeClient()
+                        webViewClient = android.webkit.WebViewClient()
+                        layoutParams = FrameLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT
+                        )
+                        val html = """
+                            <!DOCTYPE html>
+                            <html>
+                            <head>
+                                <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+                                <style>
+                                    body { margin: 0; padding: 0; background: #000; display: flex; align-items: center; justify-content: center; height: 100vh; overflow: hidden; }
+                                    iframe { width: 100%; height: 100%; border: none; }
+                                </style>
+                            </head>
+                            <body>
+                                <iframe src="https://invidious.tiekoetter.com/embed/${mediaItem.id}?autoplay=1&player_style=invidious" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </body>
+                            </html>
+                        """.trimIndent()
+                        loadDataWithBaseURL("https://invidious.tiekoetter.com", html, "text/html", "UTF-8", null)
+                    }
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+        } else if (!isAudioOnly) {
             AndroidView(
                 factory = { ctx ->
                     PlayerView(ctx).apply {
